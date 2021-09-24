@@ -10,13 +10,14 @@ assignees: ''
 
 READ BEFORE CREATING!
 
+- MAKE SURE THIS ISSUE IS ABOUT THE LOADER. Anything to do with the addons themselves should go here: https://github.com/ScratchAddons/ScratchAddons/issues/new/choose
 - Avoid creating duplicates! Read the FAQ page and search through Issues and Discussions before creating one.
 - Try to do a simple but descriptive title, and include detailed information in here. This could save a lot of time and help us fix issues swiftly.
 - Make sure to use the latest version of Scratch Addons.
 - Asking for help should be done on Discussions or our Discord server. Return to the last page for the links.
 
 FAQ: https://scratchaddons.com/faq
-Return to the last page: https://github.com/ScratchAddons/ScratchAddons/issues/new/choose
+Return to the last page: https://github.com/SA-Userscript/ScratchAddons/issues/new/choose
 
 -->
 
@@ -28,9 +29,9 @@ Return to the last page: https://github.com/ScratchAddons/ScratchAddons/issues/n
 
 <!-- Provide an unambiguous set of steps to reproduce this bug, and/or a link to a live example. -->
 
-1. 
-2. 
-3. 
+1.
+2.
+3.
 
 ### Expected behaviour
 

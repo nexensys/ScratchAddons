@@ -6,7 +6,9 @@ export default async function runAddonUserscripts({ addonId, scripts, enabledLat
   const globalObj = Object.create(null);
   for (const scriptInfo of scripts) {
     const { url: scriptPath, runAtComplete } = scriptInfo;
-    const scriptUrl = `${new URL(import.meta.url).origin}/addons/${addonId}/${scriptPath}`;
+    const scriptUrl = new URL("../../" + `addons/${addonId}/${scriptPath}`, import.meta.url).href
+      .replace(/(?<!\.min)\.js$/, ".js")
+      .replace(/(?<!\.min)\.css$/, ".css");
     const loadUserscript = async () => {
       await scratchAddons.l10n.loadByAddonId(addonId);
       const module = await import(scriptUrl);

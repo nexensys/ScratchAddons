@@ -111,13 +111,16 @@ export default async ({ addon, console, msg }) => {
         "promote-btn",
         async (u) => {
           if (!/^[\w-]{3,20}$/g.test(u)) return alert(msg("invalid-username"));
-          const r = await fetch(`/site-api/users/curators-in/${studioId}/promote/?usernames=${u}`, {
-            method: "PUT",
-            credentials: "include",
-            headers: {
-              "X-CSRFToken": addon.auth.csrfToken,
-            },
-          });
+          const r = await fetch(
+            `https://scratch.mit.edu/site-api/users/curators-in/${studioId}/promote/?usernames=${u}`,
+            {
+              method: "PUT",
+              credentials: "include",
+              headers: {
+                "X-CSRFToken": addon.auth.csrfToken,
+              },
+            }
+          );
           let result = await r.text();
           try {
             // Can sometimes fail so we don't really care
@@ -136,7 +139,7 @@ export default async ({ addon, console, msg }) => {
 
       rSec = makeAdder("remove-new", "remove-btn", async (u) => {
         if (!/^[\w-]{3,20}$/g.test(u)) return alert(msg("invalid-username"));
-        const r = await fetch(`/site-api/users/curators-in/${studioId}/remove/?usernames=${u}`, {
+        const r = await fetch(`https://scratch.mit.edu/site-api/users/curators-in/${studioId}/remove/?usernames=${u}`, {
           method: "PUT",
           credentials: "include",
           headers: {
@@ -170,7 +173,7 @@ export default async ({ addon, console, msg }) => {
       leaveBtn.addEventListener("click", async () => {
         if (!confirm(msg("leave-confirm"))) return;
         const u = await addon.auth.fetchUsername();
-        const r = await fetch(`/site-api/users/curators-in/${studioId}/remove/?usernames=${u}`, {
+        const r = await fetch(`https://scratch.mit.edu/site-api/users/curators-in/${studioId}/remove/?usernames=${u}`, {
           method: "PUT",
           credentials: "include",
           headers: {
