@@ -424,8 +424,7 @@ if (location.pathname.startsWith("/discuss/")) {
   }
 }
 
-async function forumWarning(key) {
-  const manifest = await chrome.runtime.getManifest();
+function forumWarning(key) {
   let postArea = document.querySelector("form#post > label");
   if (postArea) {
     var errorList = document.querySelector("form#post > label > ul");
@@ -439,8 +438,10 @@ async function forumWarning(key) {
     let reportLink = document.createElement("a");
     const uiLanguage = chrome.i18n.getUILanguage();
     const localeSlash = uiLanguage.startsWith("en") ? "" : `${uiLanguage.split("-")[0]}/`;
-    const utm = `utm_source=extension&utm_medium=forumwarning&utm_campaign=v${manifest.version}`;
-    reportLink.href = `https://scratchaddons.com/${localeSlash}feedback/?ext_version=${manifest.version}&${utm}`;
+    const utm = `utm_source=extension&utm_medium=forumwarning&utm_campaign=v${chrome.runtime.getManifest().version}`;
+    reportLink.href = `https://scratchaddons.com/${localeSlash}feedback/?ext_version=${
+      chrome.runtime.getManifest().version
+    }&${utm}`;
     reportLink.target = "_blank";
     reportLink.innerText = chrome.i18n.getMessage("reportItHere");
     let text1 = document.createElement("span");
@@ -450,7 +451,7 @@ async function forumWarning(key) {
   }
 }
 
-const showBanner = async () => {
+const showBanner = () => {
   const makeBr = () => document.createElement("br");
 
   const notifOuterBody = document.createElement("div");
@@ -485,7 +486,7 @@ const showBanner = async () => {
   */
   const notifImage = Object.assign(document.createElement("img"), {
     // alt: chrome.i18n.getMessage("hexColorPickerAlt"),
-    src: chrome.runtime.getURL("images/cs/single-block-grab.gif"),
+    src: chrome.runtime.getURL("/images/cs/single-block-grab.gif"),
     style: "height: 175px; border-radius: 5px; padding: 20px",
   });
   const notifText = Object.assign(document.createElement("div"), {
@@ -507,12 +508,12 @@ const showBanner = async () => {
   notifClose.addEventListener("click", () => notifInnerBody.remove(), { once: true });
 
   const NOTIF_TEXT_STYLE = "display: block; font-size: 14px; color: white !important;";
-  const manifest = await chrome.runtime.getManifest();
+
   const notifInnerText0 = Object.assign(document.createElement("span"), {
     style: NOTIF_TEXT_STYLE + "font-weight: bold;",
     textContent: chrome.i18n
       .getMessage("extensionHasUpdated", DOLLARS)
-      .replace(/\$(\d+)/g, (_, i) => [manifest.version][Number(i) - 1]),
+      .replace(/\$(\d+)/g, (_, i) => [chrome.runtime.getManifest().version][Number(i) - 1]),
   });
   const notifInnerText1 = Object.assign(document.createElement("span"), {
     style: NOTIF_TEXT_STYLE,
@@ -542,14 +543,18 @@ const showBanner = async () => {
   });
   const uiLanguage = chrome.i18n.getUILanguage();
   const localeSlash = uiLanguage.startsWith("en") ? "" : `${uiLanguage.split("-")[0]}/`;
-  const utm = `utm_source=extension&utm_medium=updatenotification&utm_campaign=v${manifest.version}`;
+  const utm = `utm_source=extension&utm_medium=updatenotification&utm_campaign=v${
+    chrome.runtime.getManifest().version
+  }`;
   const notifFooterChangelog = Object.assign(document.createElement("a"), {
     href: `https://scratchaddons.com/${localeSlash}changelog?${utm}`,
     target: "_blank",
     textContent: chrome.i18n.getMessage("notifChangelog"),
   });
   const notifFooterFeedback = Object.assign(document.createElement("a"), {
-    href: `https://scratchaddons.com/${localeSlash}feedback/?ext_version=${manifest.version}&${utm}`,
+    href: `https://scratchaddons.com/${localeSlash}feedback/?ext_version=${
+      chrome.runtime.getManifest().version
+    }&${utm}`,
     target: "_blank",
     textContent: chrome.i18n.getMessage("feedback"),
   });
@@ -591,7 +596,7 @@ const showBanner = async () => {
 };
 
 const handleBanner = async () => {
-  const currentVersion = (await chrome.runtime.getManifest()).version;
+  const currentVersion = chrome.runtime.getManifest().version;
   const [major, minor, _] = currentVersion.split(".");
   const currentVersionMajorMinor = `${major}.${minor}`;
   // Making this configurable in the future?

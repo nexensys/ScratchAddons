@@ -3,19 +3,13 @@ import getDirection from "../rtl-list.js";
 import loadVueComponent from "../../libraries/common/load-vue-components.js";
 import Fuse from "../../libraries/thirdparty/fuse.esm.min.js";
 import tags from "./data/tags.js";
-import addonGroupsFunc from "./data/addon-groups.js";
-import categoriesFunc from "./data/categories.js";
+import addonGroups from "./data/addon-groups.js";
+import categories from "./data/categories.js";
 import exampleManifest from "./data/example-manifest.js";
 import fuseOptions from "./data/fuse-options.js";
 
-if (window.parent === window) {
-  location.href = "https://scratch.mit.edu/scratch-addons-extention/settings";
-}
-
-chrome.i18n.init();
-
 let isIframe = false;
-if (new URLSearchParams(window.location.search).get("popup")) {
+if (window.parent !== window) {
   // We're in a popup!
   document.body.classList.add("iframe");
   isIframe = true;
@@ -76,15 +70,16 @@ chrome.storage.sync.get(["globalTheme"], function ({ globalTheme = false }) {
     },
   });
 
-  if (chrome.i18n.ready) func();
-  else window.addEventListener(".i18n load", func);
-})();
-
-async function func() {
-  const manifest = await chrome.runtime.getManifest();
-
-  const addonGroups = addonGroupsFunc();
-  const categories = categoriesFunc();
+  const browserLevelPermissions = ["notifications"];
+  if (typeof browser !== "undefined") browserLevelPermissions.push("clipboardWrite");
+  let grantedOptionalPermissions = [];
+  const updateGrantedPermissions = () =>
+    chrome.permissions.getAll(({ permissions }) => {
+      grantedOptionalPermissions = permissions.filter((p) => browserLevelPermissions.includes(p));
+    });
+  updateGrantedPermissions();
+  chrome.permissions.onAdded?.addListener(updateGrantedPermissions);
+  chrome.permissions.onRemoved?.addListener(updateGrantedPermissions);
 
   const promisify =
     (callbackFn) =>
@@ -99,7 +94,7 @@ async function func() {
     const serialized = {
       core: {
         lightTheme: storedSettings.globalTheme,
-        version: manifest.version_name,
+        version: chrome.runtime.getManifest().version_name,
       },
       addons: {},
     };
@@ -117,12 +112,19 @@ async function func() {
     const syncGet = promisify(chrome.storage.sync.get.bind(chrome.storage.sync));
     const syncSet = promisify(chrome.storage.sync.set.bind(chrome.storage.sync));
     const { addonSettings, addonsEnabled } = await syncGet(["addonSettings", "addonsEnabled"]);
+    const pendingPermissions = {};
     for (const addonId of Object.keys(obj.addons)) {
       const addonValue = obj.addons[addonId];
       const addonManifest = manifests.find((m) => m._addonId === addonId);
       if (!addonManifest) continue;
-      addonsEnabled[addonId] = addonValue.enabled;
-
+      const permissionsRequired = addonManifest.permissions || [];
+      const browserPermissionsRequired = permissionsRequired.filter((p) => browserLevelPermissions.includes(p));
+      console.log(addonId, permissionsRequired, browserPermissionsRequired);
+      if (addonValue.enabled && browserPermissionsRequired.length) {
+        pendingPermissions[addonId] = browserPermissionsRequired;
+      } else {
+        addonsEnabled[addonId] = addonValue.enabled;
+      }
       addonSettings[addonId] = Object.assign({}, addonSettings[addonId], addonValue.settings);
     }
     if (handleConfirmClicked) confirmElem.removeEventListener("click", handleConfirmClicked, { once: true });
@@ -132,6 +134,15 @@ async function func() {
     });
     handleConfirmClicked = async () => {
       handleConfirmClicked = null;
+      if (Object.keys(pendingPermissions).length) {
+        const granted = await promisify(chrome.permissions.request.bind(chrome.permissions))({
+          permissions: Object.values(pendingPermissions).flat(),
+        });
+        console.log(pendingPermissions, granted);
+        Object.keys(pendingPermissions).forEach((addonId) => {
+          addonsEnabled[addonId] = granted;
+        });
+      }
       await syncSet({
         globalTheme: !!obj.core.lightTheme,
         addonsEnabled,
@@ -169,12 +180,14 @@ async function func() {
         addonGroups: addonGroups.filter((g) => (isIframe ? g.iframeShow : g.fullscreenShow)),
         categories,
         searchMsg: this.msg("search"),
+        browserLevelPermissions,
+        grantedOptionalPermissions,
         addonListObjs: [],
         sidebarUrls: (() => {
           const uiLanguage = chrome.i18n.getUILanguage();
           const localeSlash = uiLanguage.startsWith("en") ? "" : `${uiLanguage.split("-")[0]}/`;
-          const version = manifest.version;
-          const versionName = manifest.version_name;
+          const version = chrome.runtime.getManifest().version;
+          const versionName = chrome.runtime.getManifest().version_name;
           const utm = `utm_source=extension&utm_medium=settingspage&utm_campaign=v${version}`;
           return {
             contributors: `https://scratchaddons.com/${localeSlash}contributors?${utm}`,
@@ -209,10 +222,10 @@ async function func() {
         return this.addonListObjs.sort((b, a) => results.indexOf(b) - results.indexOf(a));
       },
       version() {
-        return manifest.version;
+        return chrome.runtime.getManifest().version;
       },
       versionName() {
-        return manifest.version_name;
+        return chrome.runtime.getManifest().version_name;
       },
       addonAmt() {
         return `${Math.floor(this.manifests.length / 5) * 5}+`;
@@ -397,10 +410,11 @@ async function func() {
       },
     },
     ready() {
-      // Autofocus search bar
-      // autofocus attribute doesn't work
-      // `Blocked autofocusing on a <input> element in a cross-origin subframe.`
-      setTimeout(() => document.getElementById("searchBox")?.focus(), 0);
+      // Autofocus search bar in iframe mode for both browsers
+      // autofocus attribute only works in Chrome for us, so
+      // we also manually focus on Firefox, even in fullscreen
+      if (isIframe || typeof browser !== "undefined")
+        setTimeout(() => document.getElementById("searchBox")?.focus(), 0);
 
       const exampleAddonListItem = {
         // Need to specify all used properties for reactivity!
@@ -426,18 +440,18 @@ async function func() {
 
   const getRunningAddons = (manifests, addonsEnabled) => {
     return new Promise((resolve) => {
-      chrome.runtime.sendMessage("getRunningAddons", (res) => {
-        // Just so we don't get any errors in the console if we don't get any response from a non scratch tab.
-        void chrome.runtime.lastError;
-        const addonsCurrentlyOnTab = res ? [...res.userscripts, ...res.userstyles] : [];
-        const addonsPreviouslyOnTab = res ? res.disabledDynamicAddons : [];
-        resolve({ addonsCurrentlyOnTab, addonsPreviouslyOnTab });
+      chrome.tabs.query({ currentWindow: true, active: true }, (tabs) => {
+        if (!tabs[0].id) return;
+        chrome.tabs.sendMessage(tabs[0].id, "getRunningAddons", { frameId: 0 }, (res) => {
+          // Just so we don't get any errors in the console if we don't get any response from a non scratch tab.
+          void chrome.runtime.lastError;
+          const addonsCurrentlyOnTab = res ? [...res.userscripts, ...res.userstyles] : [];
+          const addonsPreviouslyOnTab = res ? res.disabledDynamicAddons : [];
+          resolve({ addonsCurrentlyOnTab, addonsPreviouslyOnTab });
+        });
       });
     });
   };
-
-  // Wait for scratchAddons to load
-  await promisify(chrome.runtime.sendMessage)("waitForState");
 
   chrome.runtime.sendMessage("getSettingsInfo", async ({ manifests, addonsEnabled, addonSettings }) => {
     vue.addonSettings = addonSettings;
@@ -447,8 +461,6 @@ async function func() {
       iframeData = await getRunningAddons(manifests, addonsEnabled);
     }
     const deepClone = (obj) => JSON.parse(JSON.stringify(obj));
-    vue.manifests = [];
-    let binaryNum = "";
     for (const { manifest, addonId } of manifests) {
       manifest._categories = [];
       manifest._categories[0] = manifest.tags.includes("popup")
@@ -539,14 +551,13 @@ async function func() {
         vue.addonGroups.find((g) => g.id === groupId)?.addonIds.push(manifest._addonId);
       }
       cleanManifests.push(deepClone(manifest));
-
-      // Manifest objects will now be owned by Vue
-      Vue.set(vue.manifestsById, manifest._addonId, manifest);
-
-      vue.manifests.push(manifest);
-
-      binaryNum += addonsEnabled[addonId] === true ? "1" : "0";
     }
+
+    // Manifest objects will now be owned by Vue
+    for (const { manifest } of manifests) {
+      Vue.set(vue.manifestsById, manifest._addonId, manifest);
+    }
+    vue.manifests = manifests.map(({ manifest }) => manifest);
 
     fuse = new Fuse(cleanManifests, fuseOptions);
 
@@ -562,8 +573,6 @@ async function func() {
     };
     const order = [["danger", "beta"], "editor", "community", "popup"];
 
-    let naturalIndex = 0; // Index when not searching
-
     vue.addonGroups.forEach((group) => {
       group.addonIds = group.addonIds
         .map((id) => vue.manifestsById[id])
@@ -575,7 +584,17 @@ async function func() {
           return 0; // just to suppress linter
         })
         .map((addon) => addon._addonId);
+    });
 
+    if (isIframe) {
+      const addonsInGroups = [];
+      for (const group of vue.addonGroups) group.addonIds.forEach((addonId) => addonsInGroups.push(addonId));
+      const searchGroup = vue.addonGroups.find((group) => group.id === "_iframeSearch");
+      searchGroup.addonIds = Object.keys(vue.manifestsById).filter((addonId) => addonsInGroups.indexOf(addonId) === -1);
+    }
+
+    let naturalIndex = 0; // Index when not searching
+    for (const group of vue.addonGroups) {
       group.addonIds.forEach((addonId, groupIndex) => {
         const cachedObj = vue.addonListObjs.find((o) => o.manifest._addonId === "example");
         const obj = cachedObj || {};
@@ -595,17 +614,9 @@ async function func() {
         if (!cachedObj) vue.addonListObjs.push(obj);
         naturalIndex++;
       });
-    });
-
-    if (isIframe) {
-      const addonsInGroups = [];
-      for (const group of vue.addonGroups) group.addonIds.forEach((addonId) => addonsInGroups.push(addonId));
-      const searchGroup = vue.addonGroups.find((group) => group.id === "_iframeSearch");
-      searchGroup.addonIds = Object.keys(vue.manifestsById).filter((addonId) => addonsInGroups.indexOf(addonId) === -1);
-
-      // Remove unused remaining cached objects. Can only happen in iframe mode
-      vue.addonListObjs = vue.addonListObjs.filter((o) => o.manifest._addonId !== "example");
     }
+    // Remove unused remaining cached objects. Can only happen in iframe mode
+    vue.addonListObjs = vue.addonListObjs.filter((o) => o.manifest._addonId !== "example");
 
     vue.loaded = true;
     setTimeout(() => {
@@ -618,9 +629,6 @@ async function func() {
           const addonId = hash.substring(7);
           const groupWithAddon = vue.addonGroups.find((group) => group.addonIds.includes(addonId));
           groupWithAddon.expanded = true;
-        }
-
-        if (browser) {
           setTimeout(() => {
             // Only required in Firefox
             window.location.hash = "";
@@ -630,6 +638,8 @@ async function func() {
       }
     }, 0);
 
+    let binaryNum = "";
+    manifests.forEach(({ addonId }) => (binaryNum += addonsEnabled[addonId] === true ? "1" : "0"));
     const addonsEnabledBase36 = BigInt(`0b${binaryNum}`).toString(36);
     vue.sidebarUrls.feedback += `#_${addonsEnabledBase36}`;
   });
@@ -645,8 +655,6 @@ async function func() {
   });
 
   document.title = chrome.i18n.getMessage("settingsTitle");
-  chrome.runtime.sendMessage({ title: document.title });
-
   function resize() {
     if (window.innerWidth < 1100) {
       vue.smallMode = true;
@@ -658,7 +666,7 @@ async function func() {
       vue.switchPath = "../../images/icons/close.svg";
     }
   }
-  window.addEventListener("resize", resize);
+  window.onresize = resize;
   resize();
 
   // Konami code easter egg
@@ -682,4 +690,6 @@ async function func() {
       setTimeout(() => (vue.searchInputReal = ""), 0); // Allow konami code in autofocused search bar
     }
   });
-}
+
+  chrome.runtime.sendMessage("checkPermissions");
+})();

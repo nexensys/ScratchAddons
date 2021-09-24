@@ -1,15 +1,14 @@
-/* global libraryLicenses, licenseNameToText, licensesReady */
-
-window.licenseNameToText = {};
-fetch(chrome.runtime.getURL("libraries/license-info.json"))
+let libraryLicenses = {};
+let licenseNameToText = {};
+fetch("/libraries/license-info.json")
   .then((res) => res.json())
   .then((o) => {
-    window.libraryLicenses = o;
+    libraryLicenses = o;
     return o;
   })
   .then((o) =>
     Object.values(o).map((name) =>
-      fetch(chrome.runtime.getURL(`libraries/licenses/${name}.txt`))
+      fetch(`/libraries/licenses/${name}.txt`)
         .then((res) => res.text())
         .then((text) => ({ name, text }))
     )
@@ -19,13 +18,8 @@ fetch(chrome.runtime.getURL("libraries/license-info.json"))
     a.forEach(({ name, text }) => {
       licenseNameToText[name] = text;
     })
-  )
-  .then(() => {
-    window.dispatchEvent(new CustomEvent("licenses-loaded"));
-    window.licensesReady = true;
-  });
+  );
 
-/*
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   if (request === "getLibraryInfo") {
     sendResponse(libraryLicenses);
@@ -33,4 +27,3 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     sendResponse({ licenseText: licenseNameToText[request.licenseName] });
   }
 });
-*/

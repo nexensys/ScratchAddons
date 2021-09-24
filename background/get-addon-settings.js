@@ -45,6 +45,7 @@ chrome.storage.sync.get(["addonSettings", "addonsEnabled"], ({ addonSettings = {
 
             addonSettings[addonId] = settings; // Note: IIRC this line doesn't actually do anything
             madeAnyChanges = true;
+            console.log("Migrated editor-dark-mode to presets");
             // Skip following code, continue with next addon
             continue;
           }
@@ -82,6 +83,7 @@ chrome.storage.sync.get(["addonSettings", "addonsEnabled"], ({ addonSettings = {
           if (settings.force === false) {
             // Note: addon might be disabled already, but we don't care
             addonsEnabled[addonId] = false;
+            console.log("Disabled dango-rain because force was disabled");
           }
           delete settings.force; // Remove setting so that this only happens once
           madeChangesToAddon = true;
