@@ -15,5 +15,8 @@
   },
   "homepage": "https://github.com/ScratchAddons/ScratchAddons#readme",
   "private": true,
-  "type": "module"
+  "type": "module",
+  "devDependencies": {
+    "rollup": "^3.6.0"
+  }
 }
