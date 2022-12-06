@@ -36,3 +36,4 @@ ehthumbs_vista.db
 # Node.js specific folders and files
 node_modules/
 package-lock.json
+PORT
