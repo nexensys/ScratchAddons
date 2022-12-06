@@ -17,6 +17,7 @@
   "private": true,
   "type": "module",
   "devDependencies": {
-    "rollup": "^3.6.0"
+    "rollup": "^3.6.0",
+    "ws": "^8.11.0"
   }
 }
