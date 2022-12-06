@@ -1,0 +1,19 @@
+{
+  "version": "1.0.0",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ScratchAddons/ScratchAddons.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "GPLV3",
+  "bugs": {
+    "url": "https://github.com/ScratchAddons/ScratchAddons/issues"
+  },
+  "homepage": "https://github.com/ScratchAddons/ScratchAddons#readme",
+  "private": true,
+  "type": "module"
+}
