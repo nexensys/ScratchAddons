@@ -37,3 +37,4 @@ ehthumbs_vista.db
 node_modules/
 package-lock.json
 PORT
+build/
