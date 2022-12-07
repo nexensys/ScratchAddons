@@ -34,6 +34,7 @@ ehthumbs_vista.db
 [Dd]esktop.ini
 
 # Node.js specific folders and files
+node_modules/
 package-lock.json
 PORT
 build/
