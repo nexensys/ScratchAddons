@@ -11,7 +11,7 @@ scratchAddons.eventTargets = {
 };
 scratchAddons.session = {};
 scratchAddons.loadedScripts = {};
-window.scratchAddons.addons = {}
+window.scratchAddons.addons = {};
 const consoleOutput = (logAuthor = "[page]") => {
   const style = {
     // Remember to change these as well on cs.js
