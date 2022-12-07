@@ -20,12 +20,13 @@ export function hmrPlugin() {
   };
 }
 
-export function addonPlugin(addonId, userscript) {
-  const filter = utils.createFilter([`**/addons/${addonId}/${userscript}`]);
+export function addonTransformer() {
   return {
-    name: `sa-addon (${addonId})`,
+    name: `sa-addon-transformer`,
     transform(code, id) {
-      if (!filter(id)) return;
+      if (!this.getModuleInfo(id)?.isEntry) return;
+      const [, addonId, userscriptPath] = id.match(/addons[\/\\]+([^\/\\]*)[\/\\]+(.*)$/);
+      const userscript = userscriptPath.replace(/[\/\\]+/g, "/");
       const s = new MagicString(code);
       const idx = code.indexOf("export default");
       s.update(
@@ -40,6 +41,15 @@ export function addonPlugin(addonId, userscript) {
         }),
         moduleSideEffects: "no-treeshake",
       };
+    },
+  };
+}
+
+export function addonLibPlugin() {
+  const filter = utils.createFilter(["**/libraries/**/*"]);
+  return {
+    manualChunks() {
+      const libraryName = /libraries\/(.*)$/.exec();
     },
   };
 }
