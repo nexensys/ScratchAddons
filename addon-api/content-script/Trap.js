@@ -21,9 +21,19 @@ export default class Trap extends Listenable {
    */
   get vm() {
     if (!this._getEditorMode()) throw new Error("Cannot access vm on non-project page");
-    return __scratchAddonsTraps._onceMap.vm;
+    if (this._cache.vm) return this._cache.vm;
+    const app = document.querySelector("#app");
+    if (!app) throw new Error("Unable to access vm through redux");
+    return (this._cache.vm =
+      app[Object.keys(app).find((key) => /^__reactContainer/.test(key))].child.stateNode.store.scratchGui.vm);
   }
 
+  /**
+   * @private
+   */
+  get REACT_CONTAINER_PREFIX() {
+    return "__reactContainer";
+  }
   /**
    * @private
    */
