@@ -25,7 +25,9 @@ export default class Trap extends Listenable {
     const app = document.querySelector("#app");
     if (!app) throw new Error("Unable to access vm through redux");
     return (this._cache.vm =
-      app[Object.keys(app).find((key) => /^__reactContainer/.test(key))].child.stateNode.store.scratchGui.vm);
+      app[
+        Object.keys(app).find((key) => key.startsWith(this.REACT_CONTAINER_PREFIX))
+      ].child.stateNode.store.getState().scratchGui.vm);
   }
 
   /**
