@@ -6,6 +6,7 @@ import Listenable from "./Listenable.js";
  * @property {string} id the addon's ID.
  * @property {string} browser the browser.
  * @property {boolean} disabled whether the addon is disabled or not.
+ * @property {boolean} updated whether the addon has been changed and needs to stop or not.
  */
 export default class Self extends Listenable {
   constructor(addonObj, info) {
@@ -16,6 +17,7 @@ export default class Self extends Listenable {
     // catches both Chrome and Chromium
     this.browser = /Chrom/.test(navigator.userAgent) ? "chrome" : "firefox";
     this.disabled = false;
+    this.updated = false;
     this.addEventListener("disabled", () => (this.disabled = true));
     this.addEventListener("reenabled", () => (this.disabled = false));
   }

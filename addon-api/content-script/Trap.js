@@ -36,6 +36,7 @@ export default class Trap extends Listenable {
   get REACT_CONTAINER_PREFIX() {
     return "__reactContainer";
   }
+
   /**
    * @private
    */

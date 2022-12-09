@@ -1,0 +1,14 @@
+{
+  "name": "Test",
+  "description": "test addon",
+  "tags": ["editor"],
+  "versionAdded": "1.29.0",
+  "enabledByDefault": true,
+  "userscripts": [
+    {
+      "matches": ["projects"],
+      "runAtComplete": true,
+      "url": "userscript.js"
+    }
+  ]
+}

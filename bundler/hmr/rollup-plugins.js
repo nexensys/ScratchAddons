@@ -1,18 +1,14 @@
-import path from "path";
-import process from "process";
-
-import utils from "@rollup/pluginutils";
 import MagicString from "magic-string";
 
 import port from "../port.js";
 
-export function hmrPlugin() {
+export function hmrPlugin(dev) {
   return {
     name: "sa-dev-hmr",
     resolveImportMeta(property, { moduleId }) {
       switch (property) {
         case "saHmrPort":
-          return `${port}`;
+          return dev ? `${port}` : null;
         default:
           return null;
       }
@@ -20,13 +16,20 @@ export function hmrPlugin() {
   };
 }
 
+addonTransformer.addons_changed = [];
+addonTransformer.addons_cached = {};
+
 export function addonTransformer() {
   return {
     name: `sa-addon-transformer`,
     transform(code, id) {
       if (!this.getModuleInfo(id)?.isEntry) return;
       const [, addonId, userscriptPath] = id.match(/addons[\/\\]+([^\/\\]*)[\/\\]+(.*)$/);
-      const userscript = userscriptPath.replace(/[\/\\]+/g, "/");
+      if (!(addonId in addonTransformer.addons_cached)) addonTransformer.addons_cached[addonId] = {};
+      const userscript = userscriptPath.replace(/[\/\\]+/g, "/"); // Normalize
+      if (code !== addonTransformer.addons_cached[addonId][userscript])
+        addonTransformer.addons_changed.push({ addonId, first: !addonTransformer.addons_cached[addonId][userscript] });
+      addonTransformer.addons_cached[addonId][userscript] = code;
       const s = new MagicString(code);
       const idx = code.indexOf("export default");
       s.update(
@@ -41,15 +44,6 @@ export function addonTransformer() {
         }),
         moduleSideEffects: "no-treeshake",
       };
-    },
-  };
-}
-
-export function addonLibPlugin() {
-  const filter = utils.createFilter(["**/libraries/**/*"]);
-  return {
-    manualChunks() {
-      const libraryName = /libraries\/(.*)$/.exec();
     },
   };
 }

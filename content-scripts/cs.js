@@ -124,7 +124,7 @@ document.documentElement.appendChild(pageComlinkScript);
 
 const moduleScript = document.createElement("script");
 moduleScript.type = "module";
-moduleScript.src = chrome.runtime.getURL("content-scripts/inject/module.js");
+moduleScript.src = chrome.runtime.getURL("build/inject.js");
 
 (async () => {
   await new Promise((resolve) => {

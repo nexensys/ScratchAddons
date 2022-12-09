@@ -1,7 +1,8 @@
 {
   "version": "1.29.0",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node bundler/scripts/start.js"
   },
   "repository": {
     "type": "git",
@@ -17,7 +18,8 @@
   "private": true,
   "type": "module",
   "devDependencies": {
-    "@rollup/pluginutils": "^5.0.2",
+    "chalk": "^5.2.0",
+    "chokidar": "^3.5.3",
     "magic-string": "^0.27.0",
     "rollup": "^3.6.0",
     "ws": "^8.11.0"

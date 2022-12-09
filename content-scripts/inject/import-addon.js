@@ -1,5 +1,5 @@
 export function importAddon(addonId, scriptPath) {
-  const scriptUrl = `${new URL(import.meta.url).origin}/build/addons/${addonId}/${scriptPath}`;
+  const scriptUrl = `${new URL(import.meta.url).origin}/build/addons/${addonId}/${scriptPath}?t=${Date.now()}`;
   const elem = Object.assign(document.createElement("script"), {
     src: scriptUrl,
     defer: true,
