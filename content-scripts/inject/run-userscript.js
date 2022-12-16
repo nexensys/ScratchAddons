@@ -1,11 +1,13 @@
 import { importAddon } from "./import-addon.js";
 import Addon from "../../addon-api/content-script/Addon.js";
 import hmrEmitter from "../../bundler/hmr/runtime.js";
+import { userscriptUpdater } from "./module.js";
 
 export default async function runAddonUserscripts({ addonId, scripts, enabledLate = false }) {
   let addonObj = new Addon({ id: addonId, enabledLate });
   addonObj.auth._update(scratchAddons.session);
-  const run = async () => {
+  let _scripts = scripts;
+  const run = async (scripts) => {
     for (const scriptInfo of scripts) {
       const { url: scriptPath, runAtComplete } = scriptInfo;
       const loadUserscript = async () => {
@@ -43,10 +45,16 @@ export default async function runAddonUserscripts({ addonId, scripts, enabledLat
     addonObj.self.dispatchEvent(new CustomEvent("disabled"));
     addonObj = new Addon({ id: addonId, enabledLate: true });
     addonObj.auth._update(scratchAddons.session);
-    run();
+    run(_scripts);
   };
   hmrEmitter.addEventListener("addonUpdate", ({ detail: { addonId: updatedAddon } }) => {
     if (updatedAddon === addonId) update();
   });
-  return await run();
+  userscriptUpdater.addEventListener("scriptUpdate", ({ detail: { addonId: updatedAddon, scripts: newScripts } }) => {
+    if (updatedAddon === addonId) {
+      _scripts = newScripts;
+      update();
+    }
+  });
+  return await run(_scripts);
 }

@@ -19,7 +19,11 @@ const hmrEmitter = new HMRTarget();
 if (import.meta.saHmrPort) {
   const ws = new WebSocket(`ws://localhost:${import.meta.saHmrPort}/addons`);
   ws.addEventListener("message", (m) => {
-    hmrEmitter.updateAddon(m.data);
+    const { event, data } = JSON.parse(m.data);
+    if (event === "addonUpdate") hmrEmitter.updateAddon(data);
+  });
+  ws.addEventListener("error", () => {
+    scratchAddons.console.warn("Unable to connect to addon development server.");
   });
 }
 

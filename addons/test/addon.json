@@ -9,6 +9,11 @@
       "matches": ["projects"],
       "runAtComplete": true,
       "url": "userscript.js"
+    },
+    {
+      "matches": ["projects"],
+      "runAtComplete": true,
+      "url": "userscript2.js"
     }
   ]
 }

@@ -20,6 +20,14 @@ export default function buildConfig() {
       plugins: [hmrPlugin(false)],
     },
     {
+      input: "content-scripts/cs.js",
+      output: {
+        file: "build/cs.js",
+        format: "es",
+      },
+      plugins: [hmrPlugin(false)],
+    },
+    {
       input: Object.fromEntries(
         Object.entries(manifests)
           .map(([addonId, manifest]) => {

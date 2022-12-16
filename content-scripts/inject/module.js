@@ -40,6 +40,8 @@ const comlinkIframe3 = document.getElementById("scratchaddons-iframe-3");
 const comlinkIframe4 = document.getElementById("scratchaddons-iframe-4");
 const _cs_ = Comlink.wrap(Comlink.windowEndpoint(comlinkIframe2.contentWindow, comlinkIframe1.contentWindow));
 
+export const userscriptUpdater = new EventTarget();
+
 const page = {
   _globalState: null,
   get globalState() {
@@ -111,6 +113,16 @@ const page = {
     scratchAddons.session = d;
     scratchAddons.eventTargets.auth.forEach((auth) => auth._update(d));
     this.isFetching = false;
+  },
+  updateManifest(addonId, scripts) {
+    userscriptUpdater.dispatchEvent(
+      new CustomEvent("scriptUpdate", {
+        detail: {
+          addonId,
+          scripts,
+        },
+      })
+    );
   },
 };
 Comlink.expose(page, Comlink.windowEndpoint(comlinkIframe4.contentWindow, comlinkIframe3.contentWindow));

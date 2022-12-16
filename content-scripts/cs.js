@@ -930,3 +930,16 @@ if (isProfile || isStudio || isProject) {
     }
   });
 }
+
+// Addon reloading
+const ws = new WebSocket(`ws://localhost:${import.meta.saHmrPort}/addons`);
+ws.addEventListener("message", (m) => {
+  const { event, data } = JSON.parse(m.data);
+  if (event === "scriptUpdate") _page_.updateManifest(data.addonId, data.scripts);
+  chrome.runtime.sendMessage({
+    scriptUpdate: data,
+  });
+});
+ws.addEventListener("error", () => {
+  console.warn("Unable to connect to addon development server.");
+});
