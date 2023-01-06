@@ -51,6 +51,7 @@
     "content-scripts/inject/*",
     "addon-api/*",
     "addons/*",
+    "assets/*",
     "build/*",
     "libraries/*/cs/*",
     "addons-l10n/*/*.json",

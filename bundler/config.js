@@ -1,4 +1,7 @@
 import fs from "fs";
+
+import json from "@rollup/plugin-json";
+
 import { addonTransformer, hmrPlugin } from "./hmr/rollup-plugins.js";
 
 export default function buildConfig() {
@@ -43,7 +46,14 @@ export default function buildConfig() {
         sourcemap: true,
         entryFileNames: "[name]",
       },
-      plugins: [addonTransformer()],
+      plugins: [
+        json({
+          preferConst: true,
+          compact: true,
+          namedExports: true,
+        }),
+        addonTransformer(),
+      ],
     },
   ];
 }
